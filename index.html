@@ -4,400 +4,376 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ASCII Bloom</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
-/* Layout: a terminal window on the left that plays the bloom, a narrow control rail on the right; stacks on phones. */
+/* Layout: one 9:16 frame like a phone clip. Top: black ASCII column between slate flanks. Bottom: a code editor scrolling in sync. Controls sit under the frame. */
 :root {
-  --bg: #07080c;
-  --panel: #0e1118;
-  --line: #1c2230;
-  --fg: #d9dde7;
-  --muted: #7c859a;
-  --accent: #ff6b95;
+  --page: #07080c;
+  --flank: #0f121b;
   --screen: #000000;
+  --editor: #1a1d28;
+  --editor-bar: #20232f;
+  --line-hl: rgba(130, 150, 210, 0.13);
+  --code: #c9cdd9;
+  --gutter: #4d5367;
+  --muted: #8a90a3;
+  --accent: #ff6b95;
   --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
-  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html, body { min-height: 100%; }
+html, body { margin: 0; min-height: 100%; }
 body {
-  background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px;
+  background: var(--page); color: var(--code); font: 14px/1.4 var(--mono);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 24px;
+  padding-block: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
 }
-.wrap {
-  display: grid; grid-template-columns: auto minmax(0, 330px); gap: 28px;
-  justify-content: center; align-items: start; max-width: 1100px; margin: 0 auto;
+.frame {
+  container-type: inline-size;
+  aspect-ratio: 9 / 16; height: min(88vh, 940px); max-width: 100%;
+  background: var(--flank); border-radius: 12px; overflow: hidden;
+  display: grid; grid-template-rows: 56.6% 1fr;
+  box-shadow: 0 0 0 1px #1a1e2a, 0 40px 90px -40px rgba(0,0,0,.9);
 }
-.term { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--screen); box-shadow: 0 30px 80px -30px rgba(255,107,149,.18); }
-.bar {
-  display: flex; align-items: center; gap: 12px; padding: 9px 12px;
-  background: #151925; border-bottom: 1px solid var(--line);
-  font: 500 12px/1 var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden;
-}
-.dots { display: flex; gap: 6px; flex: none; }
-.dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
-.dots i:nth-child(1) { background: #ff5f57; } .dots i:nth-child(2) { background: #febc2e; } .dots i:nth-child(3) { background: #28c840; }
-.bar b { color: var(--fg); font-weight: 600; }
-.screen { position: relative; aspect-ratio: 9 / 16; height: min(78vh, 820px); background: var(--screen); }
-.screen canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.art { display: flex; justify-content: center; background: var(--flank); min-height: 0; }
+.art canvas { height: 100%; aspect-ratio: 330 / 580; max-width: 100%; background: var(--screen); display: block; }
 
-.rail { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding-top: 4px; }
-h1 { font: 700 30px/1.05 var(--mono); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
-h1 span { color: var(--accent); }
-.lede { margin: 8px 0 0; color: var(--muted); line-height: 1.55; }
-.group { display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 1px solid var(--line); }
-.label { font: 600 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.editor { background: var(--editor); display: flex; flex-direction: column; min-height: 0; }
+.ed-bar {
+  display: flex; align-items: center; gap: 2.4cqw; padding: 1.7cqw 2.4cqw;
+  background: var(--editor-bar); color: var(--muted); font-size: 2.1cqw; white-space: nowrap; overflow: hidden;
+}
+.ed-bar i { width: 1.9cqw; height: 1.9cqw; border-radius: 50%; display: inline-block; margin-right: 1cqw; }
+.ed-bar i:nth-child(1) { background: #ff5f57; } .ed-bar i:nth-child(2) { background: #febc2e; } .ed-bar i:nth-child(3) { background: #28c840; }
+.ed-bar b { color: #dfe3ee; font-weight: 500; }
+.code { position: relative; flex: 1; overflow: hidden; font-size: 2.05cqw; line-height: 1.62; }
+.hl { position: absolute; left: 0; right: 0; height: 1.62em; background: var(--line-hl); top: 38%; }
+.lines { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+.ln { display: grid; grid-template-columns: 5.5ch 1fr; height: 1.62em; white-space: pre; }
+.ln span.n { color: var(--gutter); text-align: right; padding-right: 2ch; }
+.ln.cur span.n { color: #a6adc2; }
+.k { color: #c792ea; } .s { color: #c3e88d; } .m { color: #f78c6c; } .f { color: #82aaff; } .c { color: #5f6679; font-style: italic; } .self { color: #ff9cac; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; max-width: 640px; }
 button, .filebtn {
-  font: 500 13px/1 var(--sans); color: var(--fg); background: var(--panel);
-  border: 1px solid var(--line); border-radius: 7px; padding: 9px 12px; cursor: pointer;
+  font: 500 12.5px/1 var(--mono); color: var(--code); background: #121520;
+  border: 1px solid #23283a; border-radius: 7px; padding: 9px 12px; cursor: pointer; position: relative;
 }
-button:hover, .filebtn:hover { border-color: #2f3850; }
-button:focus-visible, .filebtn:focus-within, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-button.primary { background: var(--accent); color: #1a0710; border-color: var(--accent); font-weight: 600; min-width: 84px; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
-.seg button { border: 0; border-radius: 0; background: transparent; padding: 8px 11px; color: var(--muted); }
-.seg button + button { border-left: 1px solid var(--line); }
-.seg button[aria-pressed="true"] { background: #1b2131; color: var(--fg); }
-.slider { display: grid; grid-template-columns: 88px 1fr 42px; align-items: center; gap: 10px; }
-.slider span { color: var(--muted); }
-.slider output { font: 500 12px/1 var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
-input[type="range"] { width: 100%; accent-color: var(--accent); }
-.timeline { display: flex; flex-direction: column; gap: 6px; }
-.stage-name { display: flex; justify-content: space-between; font: 500 12px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-.stage-name b { color: var(--accent); font-weight: 600; }
-.filebtn { display: inline-flex; align-items: center; gap: 8px; position: relative; }
+button:hover, .filebtn:hover { border-color: #3a4260; }
+button:focus-visible, .filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: #1a0710; border-color: var(--accent); font-weight: 600; min-width: 76px; }
+.seg { display: inline-flex; border: 1px solid #23283a; border-radius: 7px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: transparent; color: var(--muted); }
+.seg button + button { border-left: 1px solid #23283a; }
+.seg button[aria-pressed="true"] { background: #1d2233; color: #e6e9f2; }
 .filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.note { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin: 0; }
-.stats { font: 500 12px/1.7 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-.stats b { color: var(--fg); font-weight: 500; }
-.ramp { font: 400 11px/1.5 var(--mono); color: #9aa3b8; word-break: break-all; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; }
+.note { color: #5d6478; font-size: 11.5px; margin: 0; text-align: center; }
 
-@media (max-width: 860px) {
-  .wrap { grid-template-columns: minmax(0, 1fr); }
-  .screen { height: auto; width: 100%; }
-  .term { max-width: 480px; width: 100%; margin: 0 auto; }
-  .rail { max-width: 480px; width: 100%; margin: 0 auto; }
+@media (max-width: 600px) {
+  .frame { height: auto; width: 100%; }
 }
+@media (prefers-reduced-motion: reduce) { .lines { will-change: auto; } }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <div class="term">
-    <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span><b>ascii_bloom.py</b> — Renderer.convert() + draw()</span></div>
-    <div class="screen" id="screen"><canvas id="out" aria-label="A bouquet of flowers growing from a vase, drawn in colored ASCII characters" role="img"></canvas></div>
+<div class="frame">
+  <div class="art"><canvas id="out" role="img" aria-label="A bouquet of flowers growing and changing vases, rendered as colored ASCII characters"></canvas></div>
+  <div class="editor">
+    <div class="ed-bar"><span><i></i><i></i><i></i></span><span><b>ascii_player.py</b> — Renderer.convert() + draw()</span></div>
+    <div class="code"><div class="hl"></div><div class="lines" id="lines"></div></div>
   </div>
-
-  <aside class="rail">
-    <div>
-      <h1>ASCII <span>Bloom</span></h1>
-      <p class="lede">A bouquet grows out of a vase, redrawn every frame as colored text. Brightness picks the character, edges get slashes and bars.</p>
-    </div>
-
-    <div class="group">
-      <div class="row">
-        <button class="primary" id="play" type="button">Pause</button>
-        <button id="restart" type="button">Replay</button>
-        <div class="seg" role="group" aria-label="Playback speed">
-          <button type="button" data-speed="0.5" aria-pressed="false">0.5×</button>
-          <button type="button" data-speed="1" aria-pressed="true">1×</button>
-          <button type="button" data-speed="2" aria-pressed="false">2×</button>
-        </div>
-      </div>
-      <div class="timeline">
-        <input type="range" id="scrub" min="0" max="19.5" step="0.01" value="0" aria-label="Timeline">
-        <div class="stage-name"><b id="stage">vase</b><span id="clock">0.0s</span></div>
-      </div>
-    </div>
-
-    <div class="group">
-      <span class="label">Render</span>
-      <div class="seg" role="group" aria-label="Render style">
-        <button type="button" data-style="ramp" aria-pressed="false">Glyphs</button>
-        <button type="button" data-style="edges" aria-pressed="true">Glyphs + edges</button>
-        <button type="button" data-style="blocks" aria-pressed="false">Blocks</button>
-      </div>
-      <label class="slider"><span>Density</span><input type="range" id="cols" min="48" max="150" step="2" value="92"><output id="colsOut">92</output></label>
-      <label class="slider"><span>Saturation</span><input type="range" id="sat" min="0" max="2" step="0.05" value="1.35"><output id="satOut">1.35</output></label>
-      <label class="slider"><span>Edges</span><input type="range" id="edges" min="0" max="1" step="0.05" value="0.35"><output id="edgesOut">0.35</output></label>
-    </div>
-
-    <div class="group">
-      <span class="label">Source</span>
-      <div class="row">
-        <label class="filebtn">Convert your own video<input type="file" id="file" accept="video/*"></label>
-        <button type="button" id="back" hidden>Back to the bloom</button>
-      </div>
-      <p class="note">Your video is processed in this tab and never uploaded.</p>
-    </div>
-
-    <div class="group">
-      <span class="label">Live</span>
-      <div class="stats" id="stats">grid <b>–</b></div>
-      <div class="ramp" id="ramp"></div>
-    </div>
-  </aside>
 </div>
+
+<div class="controls">
+  <button class="primary" id="play" type="button">Pause</button>
+  <button id="restart" type="button">Replay</button>
+  <div class="seg" role="group" aria-label="Render style">
+    <button type="button" data-style="ramp" aria-pressed="false">Glyphs</button>
+    <button type="button" data-style="edges" aria-pressed="true">+ Edges</button>
+    <button type="button" data-style="blocks" aria-pressed="false">Blocks</button>
+  </div>
+  <label class="filebtn">Your own video<input type="file" id="file" accept="video/*"></label>
+  <button type="button" id="back" hidden>Back to the bloom</button>
+</div>
+<p class="note">Space to pause. A video you load stays in this tab.</p>
 
 <script>
 (() => {
-  // ---------- config ----------
+  // ================= renderer config =================
   const RAMP = " .'`^\",:;Il!i><~+_-?][}{1)(|tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
   const EDGE = ["-", "\\", "|", "/"];
-  const W = 360, H = 640, T = 19.5;
+  const W = 330, H = 580, T = 19.2, END = 17.4;
   const FONT = '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace';
-
-  const state = {
-    t: 0.8, playing: true, speed: 1, style: "edges",
-    cols: 92, sat: 1.35, edges: 0.35, source: "bloom",
-  };
+  const state = { t: 0, playing: true, style: "edges", cols: 84, sat: 1.1, edges: 0.4, source: "bloom" };
   try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) { state.t = 13; state.playing = false; } } catch (e) {}
 
-  // ---------- elements ----------
   const $ = (id) => document.getElementById(id);
   const out = $("out"), octx = out.getContext("2d");
   const scene = document.createElement("canvas"); scene.width = W; scene.height = H;
-  const sctx = scene.getContext("2d");
+  const ctx = scene.getContext("2d");
   const small = document.createElement("canvas");
   const smctx = small.getContext("2d", { willReadFrequently: true });
-  const video = document.createElement("video");
-  video.muted = true; video.loop = true; video.playsInline = true;
-  $("ramp").textContent = RAMP.trim();
+  const video = document.createElement("video"); video.muted = true; video.loop = true; video.playsInline = true;
 
-  // ---------- helpers ----------
+  // ================= helpers =================
   const clamp01 = (x) => x < 0 ? 0 : x > 1 ? 1 : x;
+  const smooth = (x) => { x = clamp01(x); return x * x * (3 - 2 * x); };
   const ease = (x) => 1 - Math.pow(1 - clamp01(x), 3);
-  const easeIO = (x) => { x = clamp01(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const lerp = (a, b, u) => a + (b - a) * u;
   const hash = (x, y) => { const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return s - Math.floor(s); };
+  function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const mix = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+  const css = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 
-  // ---------- the bouquet ----------
-  const P = {
-    red:     ["#7a0a22", "#c8143c", "#ff7088"],
-    pink:    ["#8a1c52", "#e0478f", "#ffb8d6"],
-    coral:   ["#8a2a14", "#ef5b3a", "#ffbe95"],
-    violet:  ["#3b1f80", "#7b4fd6", "#cdb6ff"],
-    blush:   ["#8c5a6e", "#e6aabe", "#fff1f5"],
-    magenta: ["#6e1062", "#c21e9a", "#ff94e4"],
-    wine:    ["#621034", "#9e1450", "#ff6fa6"],
-  };
-  const FLOWERS = [
-    { x: 180, y: 200, R: 46, p: P.red, d: 1.2, rot: 0.2 },
-    { x: 114, y: 248, R: 39, p: P.pink, d: 1.8, rot: 1.1 },
-    { x: 250, y: 236, R: 41, p: P.coral, d: 2.3, rot: 2.0 },
-    { x: 150, y: 312, R: 31, p: P.magenta, d: 2.7, rot: 0.7 },
-    { x: 84,  y: 330, R: 33, p: P.violet, d: 3.0, rot: 1.6 },
-    { x: 278, y: 322, R: 35, p: P.blush, d: 3.4, rot: 2.6 },
-    { x: 214, y: 300, R: 31, p: P.wine, d: 3.8, rot: 0.4 },
-  ];
-  const FILLERS = [
-    { x: 56, y: 262, r: 10, d: 5.0 }, { x: 304, y: 262, r: 11, d: 5.3 },
-    { x: 136, y: 170, r: 9, d: 5.6 }, { x: 230, y: 168, r: 10, d: 5.9 },
-    { x: 64, y: 390, r: 9, d: 6.1 }, { x: 300, y: 392, r: 9, d: 6.3 },
-    { x: 184, y: 132, r: 8, d: 6.6 }, { x: 108, y: 210, r: 8, d: 6.8 }, { x: 262, y: 290, r: 8, d: 7.0 },
-  ];
-  const BASE_Y = 448;
-
-  function stemCurve(f, i, time, g) {
-    const bx = 180 + (f.x - 180) * 0.16, by = BASE_Y;
-    const sway = Math.sin(time * 0.9 + i * 1.7) * 3.2 * g;
-    const hx = f.x + sway, hy = f.y;
-    const cx = bx + (hx - bx) * 0.15, cy = (by + hy) / 2 + 12;
-    const pt = (u) => {
-      const a = (1 - u) * (1 - u), b = 2 * (1 - u) * u, c = u * u;
-      return [a * bx + b * cx + c * hx, a * by + b * cy + c * hy];
-    };
-    const tan = (u) => [2 * (1 - u) * (cx - bx) + 2 * u * (hx - cx), 2 * (1 - u) * (cy - by) + 2 * u * (hy - cy)];
-    return { pt, tan };
-  }
-
-  function drawStem(ctx, curve, g, width) {
-    if (g <= 0) return;
-    ctx.beginPath();
-    const n = 26;
-    for (let k = 0; k <= n; k++) {
-      const [x, y] = curve.pt((k / n) * g);
-      k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  // keyframed track: [[t, value], ...] -> smooth value at time t
+  function track(keys, t) {
+    if (t <= keys[0][0]) return keys[0][1];
+    for (let i = 1; i < keys.length; i++) {
+      if (t <= keys[i][0]) {
+        const u = smooth((t - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0]));
+        return lerp(keys[i - 1][1], keys[i][1], u);
+      }
     }
-    ctx.strokeStyle = "#2f8a3e"; ctx.lineWidth = width; ctx.lineCap = "round"; ctx.stroke();
-    ctx.strokeStyle = "rgba(150,230,140,.35)"; ctx.lineWidth = width * 0.35; ctx.stroke();
+    return keys[keys.length - 1][1];
   }
 
-  function drawLeaf(ctx, x, y, ang, len, w) {
+  // ================= the bouquet =================
+  const PAL = {
+    red:     ["#3e0710", "#a81a2c", "#ee6a6e"].map(hex),
+    pink:    ["#4e1532", "#c24a7e", "#f4a8c8"].map(hex),
+    rose:    ["#4a0c22", "#b8305a", "#f08aa4"].map(hex),
+    white:   ["#4a4652", "#bdb8c4", "#f6f3f8"].map(hex),
+    magenta: ["#3e0d38", "#9e2886", "#e48ad0"].map(hex),
+    coral:   ["#4e1c0c", "#c8562e", "#f6a274"].map(hex),
+    blue:    ["#142050", "#4766b8", "#a6bcec"].map(hex),
+    sky:     ["#16304e", "#5a88c0", "#b8d4f0"].map(hex),
+    violet:  ["#24164e", "#6a52b6", "#bcaaf0"].map(hex),
+  };
+  const WARM = ["red", "pink", "rose", "white", "magenta", "white", "red", "pink"];
+  const COOL = ["blue", "sky", "violet", "blue", "white"];
+
+  const rng = mulberry32(20261124);
+  const SLOTS = [];
+  for (let k = 0; k < 64; k++) {
+    const a = -Math.PI * (-0.22 + 1.44 * rng());
+    const d = Math.sqrt(rng());
+    SLOTS.push({
+      x: Math.cos(a) * d, y: Math.sin(a) * d * (Math.sin(a) > 0 ? 1.1 : 0.82) + 0.12, d,
+      size: 0.72 + rng() * 0.55, seed: rng() * 6.283,
+      warm: WARM[(rng() * WARM.length) | 0],
+      late: rng() < 0.6 ? COOL[(rng() * COOL.length) | 0] : WARM[(rng() * WARM.length) | 0],
+      swap: 8.4 + rng() * 4.5,
+    });
+  }
+  SLOTS.sort((p, q) => p.d - q.d);
+  const LEAVES = [];
+  for (let k = 0; k < 26; k++) {
+    LEAVES.push({ a: -Math.PI * (-0.18 + 1.36 * rng()), len: 0.35 + rng() * 0.4, w: 0.07 + rng() * 0.05, bend: (rng() - 0.5) * 0.8, at: 45 + rng() * 110 });
+  }
+
+  // bouquet center / radius over time
+  const CY = [[0, 432], [2.4, 420], [3.6, 392], [5.6, 360], [7.6, 330], [9.2, 302], [11.2, 272], [13.6, 246], [15.8, 222], [17.4, 214]];
+  const RR = [[0, 0], [2.2, 0], [3.6, 70], [5.6, 86], [7.6, 106], [9.2, 128], [11.2, 145], [13.6, 160], [15.8, 172], [17.4, 178]];
+  const VB = [[0, 640], [6.0, 640], [7.6, 496], [17.4, 500]];
+
+  // vase profiles: half-widths at 9 heights (top -> bottom)
+  const VASES = [
+    { h: 210, w: [48, 34, 20, 11, 6, 4, 3, 3, 3], c: ["#2e1430", "#a8487a", "#e8a8c8"], st: [255, 255, 255, 0], hd: 0 },
+    { h: 86,  w: [22, 27, 36, 41, 40, 34, 26, 19, 22], c: ["#3e0a1a", "#bc3a5a", "#f49ab0"], st: [255, 214, 170, 0.28], hd: 1 },
+    { h: 96,  w: [26, 30, 38, 43, 42, 37, 29, 22, 25], c: ["#1a0e40", "#6446b8", "#b6a2ee"], st: [255, 196, 226, 0.26], hd: 1 },
+    { h: 112, w: [32, 28, 33, 42, 47, 46, 40, 33, 36], c: ["#242448", "#9696cc", "#ebe6f6"], st: [56, 76, 168, 0.5], hd: 0.35 },
+    { h: 134, w: [40, 31, 34, 43, 49, 48, 42, 35, 39], c: ["#262c3c", "#8892ac", "#e0e4ee"], st: [40, 58, 110, 0.42], hd: 0 },
+  ].map((v) => ({ ...v, c: v.c.map(hex) }));
+  const VK = [[0, 0], [6.0, 0], [7.4, 1], [9.0, 2], [11.0, 3], [13.6, 4]];
+
+  function vaseAt(t) {
+    let i = 1; while (i < VK.length - 1 && t > VK[i][0]) i++;
+    const [t0, a] = VK[i - 1], [t1, b] = VK[i];
+    const u = t <= t0 ? 0 : smooth((t - t0) / (t1 - t0));
+    const A = VASES[a], B = VASES[b];
+    return {
+      h: lerp(A.h, B.h, u), w: A.w.map((x, k) => lerp(x, B.w[k], u)),
+      c: A.c.map((x, k) => mix(x, B.c[k], u)),
+      st: [lerp(A.st[0], B.st[0], u), lerp(A.st[1], B.st[1], u), lerp(A.st[2], B.st[2], u), lerp(A.st[3], B.st[3], u)],
+      hd: lerp(A.hd, B.hd, u),
+    };
+  }
+
+  function drawVase(cx, top, sc, v, alpha) {
+    if (alpha <= 0.01) return;
+    const N = 48, h = v.h;
+    const wAt = (u) => { const f = u * 8, i = Math.min(7, Math.floor(f)), r = f - i, s = (1 - Math.cos(r * Math.PI)) / 2; return lerp(v.w[i], v.w[i + 1], s) * sc; };
+    ctx.save(); ctx.globalAlpha = alpha;
+    // handles
+    if (v.hd > 0.02) {
+      ctx.strokeStyle = css([200, 150, 46], v.hd); ctx.lineWidth = 3.2 * sc; ctx.lineCap = "round";
+      const w0 = wAt(0.12), w1 = wAt(0.45);
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(cx + s * w0, top + h * 0.12);
+        ctx.bezierCurveTo(cx + s * (w1 + 16 * sc), top + h * 0.05, cx + s * (w1 + 18 * sc), top + h * 0.4, cx + s * (w1 - 2), top + h * 0.48);
+        ctx.stroke();
+      }
+    }
+    const path = () => {
+      ctx.beginPath();
+      for (let i = 0; i <= N; i++) { const u = i / N; ctx.lineTo(cx - wAt(u), top + u * h); }
+      for (let i = N; i >= 0; i--) { const u = i / N; ctx.lineTo(cx + wAt(u), top + u * h); }
+      ctx.closePath();
+    };
+    path();
+    const maxw = Math.max(...v.w) * sc;
+    const g = ctx.createLinearGradient(cx - maxw, 0, cx + maxw, 0);
+    g.addColorStop(0, css(v.c[0])); g.addColorStop(0.32, css(v.c[1])); g.addColorStop(0.44, css(v.c[2]));
+    g.addColorStop(0.6, css(v.c[1])); g.addColorStop(1, css(v.c[0]));
+    ctx.fillStyle = g; ctx.fill();
+    if (v.st[3] > 0.01) {
+      ctx.save(); path(); ctx.clip();
+      ctx.fillStyle = css(v.st, v.st[3]);
+      for (let y = top + 6 * sc; y < top + h; y += 7.5 * sc) ctx.fillRect(cx - maxw - 2, y, maxw * 2 + 4, 2.6 * sc);
+      ctx.restore();
+    }
+    // rim
+    ctx.beginPath(); ctx.ellipse(cx, top, wAt(0), 3.5 * sc, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#080810"; ctx.fill(); ctx.strokeStyle = css(mix(v.c[2], [214, 170, 80], v.hd * 0.8), 0.9); ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawLeaf(x, y, ang, len, w, bend, col) {
     if (len < 1) return;
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
     ctx.beginPath(); ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(len * 0.45, -w, len, 0);
-    ctx.quadraticCurveTo(len * 0.45, w, 0, 0);
-    const gr = ctx.createLinearGradient(0, -w, 0, w);
-    gr.addColorStop(0, "#5fd06e"); gr.addColorStop(0.5, "#2a8c3c"); gr.addColorStop(1, "#0e3e1a");
-    ctx.fillStyle = gr; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len * 0.9, 0);
-    ctx.strokeStyle = "#0b3315"; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.quadraticCurveTo(len * 0.45, -w + bend * len * 0.3, len, bend * len * 0.25);
+    ctx.quadraticCurveTo(len * 0.45, w + bend * len * 0.3, 0, 0);
+    const g = ctx.createLinearGradient(0, -w, 0, w);
+    g.addColorStop(0, css(col[2])); g.addColorStop(0.5, css(col[1])); g.addColorStop(1, css(col[0]));
+    ctx.fillStyle = g; ctx.fill();
     ctx.restore();
   }
+  const GREEN = ["#0c2a12", "#2c6e34", "#78b86e"].map(hex);
 
-  function drawBloom(ctx, x, y, R, p, b, rot, scale, time) {
-    if (scale <= 0.01) return;
-    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale * 0.9);
-    const breathe = 1 + Math.sin(time * 1.3 + rot * 3) * 0.015 * b;
-    ctx.scale(breathe, breathe);
-    // sepals
-    const sep = 1 - ease((b - 0.3) / 0.5);
-    if (sep > 0.02) {
-      for (let s = 0; s < 5; s++) drawLeaf(ctx, 0, R * 0.12, Math.PI / 2 + (s - 2) * 0.55, R * 0.42 * sep, R * 0.1);
-    }
-    const layers = [7, 6, 5, 4];
-    for (let k = 0; k < layers.length; k++) {
-      const lo = ease((b - k * 0.09) / 0.72);
-      const rk = R * (0.3 + 0.7 * lo) * (1 - k * 0.2);
-      const n = layers[k];
-      const gr = ctx.createRadialGradient(0, 0, rk * 0.05, 0, 0, rk * 1.05);
-      gr.addColorStop(0, p[0]); gr.addColorStop(0.45, p[1]); gr.addColorStop(1, p[2]);
+  function drawFlower(x, y, s, col, seed, open, centerCol) {
+    if (s < 0.8) return;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(seed * 0.2);
+    const layers = [[8, 1.0, 0.5], [6, 0.74, 0.32], [5, 0.48, 0.18]];
+    for (const [n, rad, off] of layers) {
+      const rk = s * rad * (0.55 + 0.45 * open);
+      const g = ctx.createRadialGradient(0, 0, rk * 0.06, 0, 0, rk * 1.15);
+      g.addColorStop(0, css(col[0])); g.addColorStop(0.5, css(col[1])); g.addColorStop(1, css(col[2]));
+      ctx.fillStyle = g;
       for (let i = 0; i < n; i++) {
-        const a = rot + k * 0.45 + (i / n) * Math.PI * 2;
-        const d = rk * (0.28 + 0.16 * lo);
-        ctx.save(); ctx.rotate(a); ctx.translate(d, 0);
-        ctx.beginPath(); ctx.ellipse(0, 0, rk * (0.42 + 0.12 * lo), rk * (0.3 + 0.08 * lo), 0, 0, Math.PI * 2);
-        ctx.restore();
-        ctx.fillStyle = gr; ctx.fill();
-        ctx.strokeStyle = p[0]; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.3; ctx.stroke(); ctx.globalAlpha = 1;
+        const a = seed + i * (Math.PI * 2 / n) + rad;
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(a) * rk * off, Math.sin(a) * rk * off * 0.9, rk * 0.55, rk * 0.4, a, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
-    // tight core
-    ctx.beginPath(); ctx.arc(0, 0, R * (0.1 + 0.06 * b), 0, Math.PI * 2);
-    ctx.fillStyle = p[0]; ctx.fill();
-    ctx.beginPath(); ctx.arc(-R * 0.03, -R * 0.03, R * 0.05, 0, Math.PI * 1.4);
-    ctx.strokeStyle = p[1]; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.14, 0, Math.PI * 2);
+    ctx.fillStyle = centerCol ? css(centerCol) : css(col[0]); ctx.fill();
     ctx.restore();
   }
 
-  function drawFiller(ctx, x, y, r, b) {
-    if (b <= 0.01) return;
-    const s = ease(b);
-    ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * Math.PI * 2;
-      const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.3);
-      gr.addColorStop(0, "#1b3a9a"); gr.addColorStop(0.6, "#3f7de8"); gr.addColorStop(1, "#b6d4ff");
-      ctx.beginPath(); ctx.ellipse(Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6, r * 0.62, r * 0.5, a, 0, Math.PI * 2);
-      ctx.fillStyle = gr; ctx.fill();
-    }
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.3, 0, Math.PI * 2); ctx.fillStyle = "#ffd447"; ctx.fill();
-    ctx.restore();
-  }
-
-  function vasePath(ctx) {
-    ctx.beginPath();
-    ctx.moveTo(146, 440);
-    ctx.bezierCurveTo(140, 470, 98, 488, 102, 530);
-    ctx.bezierCurveTo(106, 572, 140, 586, 150, 600);
-    ctx.lineTo(210, 600);
-    ctx.bezierCurveTo(220, 586, 254, 572, 258, 530);
-    ctx.bezierCurveTo(262, 488, 220, 470, 214, 440);
-    ctx.closePath();
-  }
-
-  function drawVase(ctx, a) {
-    if (a <= 0) return;
-    ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1 - a) * 26);
-    // floor shadow
-    const sh = ctx.createRadialGradient(180, 612, 4, 180, 612, 100);
-    sh.addColorStop(0, "rgba(140,150,190,.35)"); sh.addColorStop(1, "rgba(140,150,190,0)");
-    ctx.fillStyle = sh; ctx.beginPath(); ctx.ellipse(180, 612, 100, 12, 0, 0, Math.PI * 2); ctx.fill();
-    // handles
-    ctx.strokeStyle = "#d9a441"; ctx.lineWidth = 5; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(147, 458); ctx.bezierCurveTo(108, 448, 98, 486, 116, 500); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(213, 458); ctx.bezierCurveTo(252, 448, 262, 486, 244, 500); ctx.stroke();
-    // body
-    vasePath(ctx);
-    const gr = ctx.createLinearGradient(100, 0, 260, 0);
-    gr.addColorStop(0, "#0a0f30"); gr.addColorStop(0.3, "#2b3ea6"); gr.addColorStop(0.42, "#9cb4ff");
-    gr.addColorStop(0.55, "#3a52c4"); gr.addColorStop(1, "#080c26");
-    ctx.fillStyle = gr; ctx.fill();
-    ctx.save(); vasePath(ctx); ctx.clip();
-    for (let y = 452; y < 600; y += 13) {
-      ctx.fillStyle = y % 2 ? "rgba(255,150,190,.32)" : "rgba(255,205,120,.28)";
-      ctx.fillRect(90, y, 180, 4);
+  function drawStream(cx, bottom, a, time) {
+    if (a <= 0.01) return;
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.fillStyle = "rgba(120,140,200,0.10)"; ctx.fillRect(cx - 5, 0, 10, bottom);
+    const fr = Math.floor(time * 24);
+    for (let y = 0; y < bottom; y += 2) {
+      const n = hash(y * 0.37, fr), n2 = hash(fr * 0.13, y * 0.71);
+      ctx.fillStyle = `rgba(160,178,224,${0.25 + 0.6 * n})`;
+      ctx.fillRect(cx - 1.2 + (n2 - 0.5) * 1.6, y, 2.4, 2);
     }
     ctx.restore();
-    // rim + foot
-    ctx.beginPath(); ctx.ellipse(180, 440, 36, 7, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#05060f"; ctx.fill(); ctx.strokeStyle = "#e8b54e"; ctx.lineWidth = 3.5; ctx.stroke();
-    ctx.fillStyle = "#d9a441"; ctx.fillRect(148, 598, 64, 8);
-    ctx.restore();
   }
 
-  function drawScene(ctx, t, time) {
+  function drawScene(t, time) {
     ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
-    // stems + leaves (back), then fillers, then blooms front to back by height
-    FLOWERS.forEach((f, i) => {
-      const g = ease((t - f.d) / 3.2);
-      const c = stemCurve(f, i, time, g);
-      drawStem(ctx, c, g, 4);
-      [[0.32, -1], [0.58, 1], [0.78, -1]].forEach(([s, side], j) => {
-        const lg = ease((g - s) / 0.25);
-        if (lg <= 0) return;
-        const [x, y] = c.pt(s); const [tx, ty] = c.tan(s);
-        const ang = Math.atan2(ty, tx) + side * (1.05 + Math.sin(time + i + j) * 0.05);
-        drawLeaf(ctx, x, y, ang, 30 * lg * (1 - j * 0.15), 9 * lg);
+    const cx = W / 2 + Math.sin(time * 0.5) * 1.2;
+    const cy = track(CY, t), r = track(RR, t);
+    const sway = Math.sin(time * 0.8) * 1.5;
+
+    // falling stream from the top
+    drawStream(W / 2, cy - Math.max(30, r * 0.8), 1 - smooth((t - 7.0) / 1.6), time);
+
+    // vase (behind bouquet's lower edge)
+    const vtop = cy + Math.max(16, r * 0.42);
+    const sc = 0.55 + r / 220;
+    const vz = vaseAt(t); vz.h = Math.max(30, track(VB, t) - vtop);
+    drawVase(cx, vtop, sc, vz, smooth((t - 2.6) / 1.0));
+
+    // leaves around the bouquet
+    if (r > 40) {
+      LEAVES.forEach((L) => {
+        const g = smooth((r - L.at * 0.5) / 30);
+        if (g <= 0) return;
+        const droop = smooth((t - 13) / 3) * (Math.abs(Math.cos(L.a)) > 0.6 ? 0.6 : 0.2) * Math.sign(Math.cos(L.a));
+        const ang = L.a + droop;
+        drawLeaf(cx + Math.cos(L.a) * r * 0.35 + sway, cy + Math.sin(L.a) * r * 0.3, ang, r * L.len * g, r * L.w * g, L.bend, GREEN);
       });
-    });
-    FILLERS.forEach((f, i) => {
-      const g = ease((t - f.d) / 2);
-      const c = stemCurve(f, i + 7, time, g);
-      drawStem(ctx, c, g, 2);
-      const [x, y] = c.pt(g);
-      drawFiller(ctx, x, y, f.r * 1.3, (t - f.d - 1.5) / 2);
-    });
-    FLOWERS.map((f, i) => [f, i]).sort((a, b) => a[0].y - b[0].y).forEach(([f, i]) => {
-      const g = ease((t - f.d) / 3.2);
-      const c = stemCurve(f, i, time, g);
-      const [x, y] = c.pt(g);
-      const bud = ease((g - 0.7) / 0.3);
-      const b = easeIO((t - f.d - 2.6) / 5);
-      drawBloom(ctx, x, y, f.R * 1.3, f.p, b, f.rot, bud, time);
-    });
-    drawVase(ctx, ease(t / 1.2));
+    }
+
+    // dark mass between blooms
+    if (r > 4) {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, "rgba(40,10,24,0.95)"); g.addColorStop(1, "rgba(20,6,14,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.95, r * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // blooms: more appear as the bouquet widens
+    const c = 1 + Math.pow(r / 178, 1.15) * (SLOTS.length - 1);
+    const list = [];
+    for (let k = 0; k < SLOTS.length; k++) {
+      const a = clamp01(c - k); if (a <= 0) break;
+      list.push([SLOTS[k], a]);
+    }
+    list.sort((p, q) => p[0].y - q[0].y);
+    const fs = 6 + r * 0.17;
+    for (const [S, a] of list) {
+      const u = smooth((t - S.swap) / 2.2);
+      const col = [0, 1, 2].map((i) => mix(PAL[S.warm][i], PAL[S.late][i], u));
+      const wob = Math.sin(time * 0.9 + S.seed) * 1.2;
+      drawFlower(cx + S.x * r + sway + wob, cy + S.y * r * 0.9, fs * S.size * ease(a), col, S.seed, 0.6 + 0.4 * a, null);
+    }
+
+    // phase one: a single flower on a long stem, which the bouquet grows out of
+    const solo = 1 - smooth((t - 2.6) / 1.3);
+    if (solo > 0.01) {
+      ctx.save(); ctx.globalAlpha = solo;
+      const sy = cy - 6, s = 22 + 44 * ease(t / 2.2);
+      ctx.strokeStyle = css(GREEN[1]); ctx.lineWidth = 3; ctx.beginPath();
+      ctx.moveTo(cx, sy); ctx.quadraticCurveTo(cx + 3, sy + 80, cx - 1, H); ctx.stroke();
+      drawLeaf(cx, sy + 26, Math.PI * 0.78, s * 1.0, s * 0.28, 0.2, GREEN);
+      drawLeaf(cx, sy + 22, Math.PI * 0.2, s * 1.1, s * 0.3, -0.2, GREEN);
+      drawLeaf(cx, sy + 60, Math.PI * 0.85, s * 0.8, s * 0.22, 0.2, GREEN);
+      drawFlower(cx + sway, sy, s, PAL.rose, 0.8, 0.5 + 0.5 * ease(t / 2.4), [236, 170, 60]);
+      ctx.restore();
+    }
   }
 
-  function stageName(t) {
-    if (t < 1.2) return "vase";
-    if (t < 4) return "stems";
-    if (t < 6.2) return "buds";
-    if (t < 11.6) return "blooming";
-    if (t < 16) return "full bloom";
-    if (t < 18.5) return "dissolve";
-    return "rest";
-  }
-
-  // ---------- ASCII conversion ----------
-  let charRatio = 0.6, dpr = 1, geom = null;
-
+  // ================= ASCII conversion =================
+  let charRatio = 0.6, geom = null;
   function layout() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const r = out.getBoundingClientRect();
-    out.width = Math.max(1, Math.round(r.width * dpr));
-    out.height = Math.max(1, Math.round(r.height * dpr));
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const rect = out.getBoundingClientRect();
+    out.width = Math.max(1, Math.round(rect.width * dpr));
+    out.height = Math.max(1, Math.round(rect.height * dpr));
     const cellW = out.width / state.cols;
     const fontPx = cellW / charRatio;
-    const cellH = fontPx * 1.08;
-    const rows = Math.max(8, Math.floor(out.height / cellH));
+    const rows = Math.max(8, Math.floor(out.height / (fontPx * 1.12)));
     geom = { cellW, cellH: out.height / rows, fontPx, rows };
   }
 
-  function convert(dissolve) {
+  function convert(src, dissolve) {
     const { cellW, cellH, fontPx, rows } = geom;
     const cols = state.cols, blocks = state.style === "blocks";
     const sh = blocks ? rows * 2 : rows;
     if (small.width !== cols || small.height !== sh) { small.width = cols; small.height = sh; }
     smctx.imageSmoothingEnabled = true; smctx.imageSmoothingQuality = "high";
-    smctx.drawImage(scene, 0, 0, cols, sh);
+    smctx.drawImage(src, 0, 0, cols, sh);
     const d = smctx.getImageData(0, 0, cols, sh).data;
     const n = cols * sh, sat = state.sat;
     const R = new Float32Array(n), G = new Float32Array(n), B = new Float32Array(n), L = new Float32Array(n);
@@ -410,44 +386,38 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     }
     octx.fillStyle = "#000"; octx.fillRect(0, 0, out.width, out.height);
     let drawn = 0;
-
     if (blocks) {
       const hh = cellH / 2;
       for (let y = 0; y < sh; y++) for (let x = 0; x < cols; x++) {
         const i = y * cols + x;
-        if (L[i] < 0.04) continue;
-        if (dissolve > 0 && hash(x, y >> 1) < dissolve) continue;
-        octx.fillStyle = `rgb(${R[i] | 0},${G[i] | 0},${B[i] | 0})`;
+        if (L[i] < 0.04 || (dissolve > 0 && hash(x, y >> 1) < dissolve)) continue;
+        octx.fillStyle = `rgb(${R[i] * 0.85 | 0},${G[i] * 0.85 | 0},${B[i] * 0.85 | 0})`;
         octx.fillRect(Math.floor(x * cellW), Math.floor(y * hh), Math.ceil(cellW), Math.ceil(hh));
         drawn++;
       }
       return drawn;
     }
-
-    const useEdges = state.style === "edges" && state.edges > 0;
-    const thresh = 0.8 - 0.6 * state.edges;
-    const nr = RAMP.length;
-    octx.font = `600 ${fontPx}px ${FONT}`;
-    octx.textBaseline = "top";
-    const L_ = (x, y) => L[(y < 0 ? 0 : y >= rows ? rows - 1 : y) * cols + (x < 0 ? 0 : x >= cols ? cols - 1 : x)];
+    const useEdges = state.style === "edges";
+    const thresh = 0.8 - 0.6 * state.edges, nr = RAMP.length;
+    octx.font = `500 ${fontPx}px ${FONT}`; octx.textBaseline = "top";
+    const Lc = (x, y) => L[(y < 0 ? 0 : y >= rows ? rows - 1 : y) * cols + (x < 0 ? 0 : x >= cols ? cols - 1 : x)];
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
       const i = y * cols + x, lum = L[i];
-      if (lum < 0.045) continue;
+      if (lum < 0.05) continue;
       if (dissolve > 0 && hash(x, y) < dissolve) continue;
-      let ch = RAMP[Math.min(nr - 1, Math.max(0, Math.floor(Math.pow(lum, 0.62) * (nr - 1) + 0.5)))];
+      let ch = RAMP[Math.min(nr - 1, Math.floor(Math.pow(lum, 0.8) * (nr - 1) + 0.5))];
       if (useEdges && lum > 0.12) {
-        const gx = -L_(x - 1, y - 1) - 2 * L_(x - 1, y) - L_(x - 1, y + 1) + L_(x + 1, y - 1) + 2 * L_(x + 1, y) + L_(x + 1, y + 1);
-        const gy = -L_(x - 1, y - 1) - 2 * L_(x, y - 1) - L_(x + 1, y - 1) + L_(x - 1, y + 1) + 2 * L_(x, y + 1) + L_(x + 1, y + 1);
-        const mag = Math.hypot(gx, gy) / 4;
-        if (mag > thresh) {
+        const gx = -Lc(x - 1, y - 1) - 2 * Lc(x - 1, y) - Lc(x - 1, y + 1) + Lc(x + 1, y - 1) + 2 * Lc(x + 1, y) + Lc(x + 1, y + 1);
+        const gy = -Lc(x - 1, y - 1) - 2 * Lc(x, y - 1) - Lc(x + 1, y - 1) + Lc(x - 1, y + 1) + 2 * Lc(x, y + 1) + Lc(x + 1, y + 1);
+        if (Math.hypot(gx, gy) / 4 > thresh) {
           const ang = ((Math.atan2(gy, gx) * 180 / Math.PI) + 90 + 360) % 180;
           ch = EDGE[Math.floor(((ang + 22.5) % 180) / 45)];
         }
       }
       if (ch === " ") continue;
-      // keep dim colors readable: blend toward the same hue at full brightness
-      const v = Math.max(R[i], G[i], B[i], 1), k = 0.6 * 255 / v;
-      const r = Math.min(255, R[i] * (0.4 + k)), g = Math.min(255, G[i] * (0.4 + k)), b = Math.min(255, B[i] * (0.4 + k));
+      // dim, muted colour like a terminal: mostly the pixel itself, a little lifted toward full brightness
+      const v = Math.max(R[i], G[i], B[i], 1), k = 0.3 * 255 / v;
+      const r = Math.min(255, R[i] * (0.62 + k)), g = Math.min(255, G[i] * (0.62 + k)), b = Math.min(255, B[i] * (0.62 + k));
       octx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`;
       octx.fillText(ch, x * cellW, y * cellH);
       drawn++;
@@ -455,20 +425,147 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     return drawn;
   }
 
-  // ---------- video source ----------
-  function drawVideo() {
-    sctx.fillStyle = "#000"; sctx.fillRect(0, 0, W, H);
+  function drawVideoFrame() {
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return;
-    const s = Math.max(W / vw, H / vh);
-    const dw = vw * s, dh = vh * s;
-    sctx.drawImage(video, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    const s = Math.max(W / vw, H / vh), dw = vw * s, dh = vh * s;
+    ctx.drawImage(video, (W - dw) / 2, (H - dh) / 2, dw, dh);
   }
 
-  // ---------- UI ----------
-  const playBtn = $("play"), scrub = $("scrub"), stageEl = $("stage"), clockEl = $("clock"), statsEl = $("stats");
+  // ================= the code panel =================
+  const SRC = `    def convert(self, frame: np.ndarray):
+        s, cols, rows = self.s, self.cols, self.rows
+        use_blocks = s.mode == "blocks" and s.color
+        img = cv2.resize(frame, (cols, rows * 2 if use_blocks else rows),
+                         interpolation=cv2.INTER_AREA)
+        img = cv2.LUT(img, self.lut)
+        if s.saturation != 1.0 and s.color:
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV).astype(np.float32)
+            hsv[..., 1] = np.clip(hsv[..., 1] * s.saturation, 0, 255)
+            img = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+        rgb = img[..., ::-1].astype(np.float32)
 
-  function syncPlay() { playBtn.textContent = state.playing ? "Pause" : "Play"; }
+        if use_blocks:
+            glyph = np.full((rows, cols), "\\u2580", dtype="<U1")
+            return glyph, self._pack(rgb[0::2]), self._pack(rgb[1::2])
+
+        # brightness picks a glyph from the ramp
+        lum = (0.299 * rgb[..., 0] + 0.587 * rgb[..., 1]
+               + 0.114 * rgb[..., 2]) / 255.0
+        n = len(self.ramp)
+        idx = np.clip((lum ** 0.8 * (n - 1) + 0.5).astype(np.int32), 0, n - 1)
+        idx[lum < 0.05] = 0
+        glyph = self.ramp[idx]
+
+        # strong edges become - \\ | /
+        if s.edges > 0:
+            gray = lum.astype(np.float32)
+            gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
+            gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
+            mag = np.hypot(gx, gy) / 4.0
+            ang = (np.degrees(np.arctan2(gy, gx)) + 90.0) % 180.0
+            pick = (((ang + 22.5) % 180.0) // 45).astype(np.int32)
+            sel = np.array(["-", "\\\\", "|", "/"])[pick]
+            mask = (mag > (0.8 - 0.6 * s.edges)) & (lum > 0.12)
+            glyph = np.where(mask, sel, glyph)
+
+        if not s.color:
+            neg = np.full(glyph.shape, -1, dtype=np.int32)
+            return glyph, neg, neg
+
+        # keep dim pixels readable without washing them out
+        v = np.maximum(rgb.max(-1, keepdims=True), 1.0)
+        fg_rgb = rgb * 0.62 + rgb * (255.0 / v) * 0.3
+        fg = self._pack(np.clip(fg_rgb, 0, 255))
+        bg = self._pack(rgb * s.bg_tint)
+        blank = glyph == " "
+        fg = np.where(blank, -1, fg)
+        return glyph, fg, bg
+
+    def draw(self, grid) -> int:
+        glyph, fg, bg = grid
+        out: list[str] = []
+        pg = self.prev
+        for y in range(self.rows):
+            if pg is None:
+                idxs = np.arange(self.cols)
+            else:
+                changed = ((glyph[y] != pg[0][y]) | (fg[y] != pg[1][y])
+                           | (bg[y] != pg[2][y]))
+                idxs = np.flatnonzero(changed)
+                if idxs.size == 0:
+                    continue
+
+            # merge nearby changes into runs
+            seg_start = prev_i = int(idxs[0])
+            segs = []
+            for i in idxs[1:]:
+                i = int(i)
+                if i - prev_i > 6:
+                    segs.append((seg_start, prev_i))
+                    seg_start = i
+                prev_i = i
+            segs.append((seg_start, prev_i))
+
+            for a, b in segs:
+                out.append(f"\\x1b[{self.y0 + y + 1};{self.x0 + a + 1}H")
+                for x in range(a, b + 1):
+                    f, k = int(fg[y, x]), int(bg[y, x])
+                    if k != self.cur_bg:
+                        out.append(self._sgr("b", k))
+                        self.cur_bg = k
+                    if f != self.cur_fg:
+                        out.append(self._sgr("f", f))
+                        self.cur_fg = f
+                    out.append(glyph[y, x])
+
+        self.prev = (glyph.copy(), fg.copy(), bg.copy())
+        text = "".join(out)
+        if text:
+            self.term.write(text)
+        return len(text)`.split("\n");
+  const KW = new Set(["def", "class", "return", "if", "else", "elif", "for", "in", "not", "and", "or", "None", "True", "False", "import", "from", "while", "continue", "break", "is", "with", "as", "lambda"]);
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  function highlight(line) {
+    const re = /(#.*$)|(f?"(?:[^"\\]|\\.)*")|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_]\w*\b)/g;
+    let outS = "", last = 0, m;
+    while ((m = re.exec(line))) {
+      outS += esc(line.slice(last, m.index));
+      const tok = m[0];
+      if (m[1]) outS += `<span class="c">${esc(tok)}</span>`;
+      else if (m[2]) outS += `<span class="s">${esc(tok)}</span>`;
+      else if (m[3]) outS += `<span class="m">${tok}</span>`;
+      else if (KW.has(tok)) outS += `<span class="k">${tok}</span>`;
+      else if (tok === "self") outS += `<span class="self">self</span>`;
+      else if (line[re.lastIndex] === "(") outS += `<span class="f">${tok}</span>`;
+      else outS += tok;
+      last = re.lastIndex;
+    }
+    return outS + esc(line.slice(last));
+  }
+  const FIRST = 258;
+  const linesEl = $("lines");
+  linesEl.innerHTML = SRC.map((l, i) => `<div class="ln"><span class="n">${FIRST + i}</span><span>${highlight(l)}</span></div>`).join("");
+  const lineEls = linesEl.children;
+  const codeEl = linesEl.parentElement, hlEl = codeEl.querySelector(".hl");
+  let curLine = -1;
+  function syncCode(p) {
+    const f = p * (SRC.length - 1);
+    const lh = lineEls[0].getBoundingClientRect().height || 16;
+    const band = hlEl.offsetTop;
+    linesEl.style.transform = `translateY(${band - f * lh}px)`;
+    const li = Math.round(f);
+    if (li !== curLine) {
+      if (lineEls[curLine]) lineEls[curLine].classList.remove("cur");
+      if (lineEls[li]) lineEls[li].classList.add("cur");
+      curLine = li;
+    }
+  }
+
+  // ================= controls =================
+  const playBtn = $("play");
+  const syncPlay = () => { playBtn.textContent = state.playing ? "Pause" : "Play"; };
   function togglePlay() {
     state.playing = !state.playing;
     if (state.source === "video") state.playing ? video.play().catch(() => {}) : video.pause();
@@ -482,80 +579,56 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   document.addEventListener("keydown", (e) => {
     if (e.code === "Space" && !/INPUT|BUTTON|SELECT|TEXTAREA/.test(e.target.tagName)) { e.preventDefault(); togglePlay(); }
   });
-  scrub.addEventListener("input", () => {
-    const v = parseFloat(scrub.value);
-    if (state.source === "video") video.currentTime = v; else state.t = v;
-  });
-  document.querySelectorAll("[data-speed]").forEach((b) => b.addEventListener("click", () => {
-    state.speed = parseFloat(b.dataset.speed); video.playbackRate = state.speed;
-    document.querySelectorAll("[data-speed]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
-  }));
   document.querySelectorAll("[data-style]").forEach((b) => b.addEventListener("click", () => {
     state.style = b.dataset.style;
     document.querySelectorAll("[data-style]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
   }));
-  const bindSlider = (id, key, fmt) => {
-    const el = $(id), o = $(id + "Out");
-    el.addEventListener("input", () => { state[key] = parseFloat(el.value); o.textContent = fmt(state[key]); if (key === "cols") layout(); });
-  };
-  bindSlider("cols", "cols", (v) => String(v));
-  bindSlider("sat", "sat", (v) => v.toFixed(2));
-  bindSlider("edges", "edges", (v) => v.toFixed(2));
-
   let videoURL = null;
   $("file").addEventListener("change", (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
     if (videoURL) URL.revokeObjectURL(videoURL);
     videoURL = URL.createObjectURL(f);
-    video.src = videoURL; video.playbackRate = state.speed;
-    video.onloadedmetadata = () => { scrub.max = String(video.duration || 1); };
-    video.play().catch(() => {});
-    state.source = "video"; state.playing = true; syncPlay();
-    $("back").hidden = false;
+    video.src = videoURL; video.play().catch(() => {});
+    state.source = "video"; state.playing = true; syncPlay(); $("back").hidden = false;
   });
   $("back").addEventListener("click", () => {
-    video.pause(); state.source = "bloom"; state.t = 0; scrub.max = String(T);
-    $("back").hidden = true; $("file").value = ""; state.playing = true; syncPlay();
+    video.pause(); state.source = "bloom"; state.t = 0; state.playing = true; syncPlay();
+    $("back").hidden = true; $("file").value = "";
   });
 
-  // ---------- loop ----------
-  let last = performance.now(), lastDraw = 0, fps = 30, fpsAcc = 0, fpsN = 0;
+  // a link ending in #t=12 opens paused at that moment
+  window.__bloom = { seek: (t) => { state.t = t; }, state };
+  const hm = /^#t=([\d.]+)$/.exec(location.hash);
+  if (hm) { state.t = Math.min(T - 0.01, parseFloat(hm[1])); state.playing = false; }
+
+  // ================= loop =================
+  let last = performance.now(), lastDraw = 0;
   function frame(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
-    if (state.playing && state.source === "bloom") { state.t += dt * state.speed; if (state.t >= T) state.t -= T; }
+    if (state.playing && state.source === "bloom") { state.t += dt; if (state.t >= T) state.t -= T; }
     if (now - lastDraw >= 1000 / 30 - 1) {
-      const fdt = now - lastDraw; lastDraw = now;
-      fpsAcc += fdt; fpsN++;
-      if (fpsAcc > 500) { fps = Math.round(1000 / (fpsAcc / fpsN)); fpsAcc = 0; fpsN = 0; }
-      let dissolve = 0, label, clock;
+      lastDraw = now;
+      let dissolve = 0, p;
       if (state.source === "bloom") {
-        drawScene(sctx, state.t, now / 1000);
-        dissolve = state.t > 16 ? clamp01((state.t - 16) / 2.5) : 0;
-        label = stageName(state.t); clock = state.t;
+        drawScene(Math.min(state.t, END), now / 1000);
+        dissolve = smooth((state.t - END) / 1.2);
+        p = clamp01(state.t / END);
       } else {
-        drawVideo(); label = "your video"; clock = video.currentTime || 0;
+        drawVideoFrame();
+        p = video.duration ? video.currentTime / video.duration : 0;
       }
-      if (document.activeElement !== scrub) scrub.value = String(clock);
-      stageEl.textContent = label; clockEl.textContent = clock.toFixed(1) + "s";
-      const drawn = convert(dissolve);
-      statsEl.innerHTML = `grid <b>${state.cols}×${geom.rows}</b> · <b>${fps}</b> fps · <b>${drawn.toLocaleString()}</b> ${state.style === "blocks" ? "blocks" : "glyphs"}`;
+      convert(scene, dissolve);
+      syncCode(p);
     }
     requestAnimationFrame(frame);
   }
-
   function start() {
-    try {
-      octx.font = `600 100px ${FONT}`;
-      const w = octx.measureText("M").width / 100;
-      if (w > 0.3 && w < 1) charRatio = w;
-    } catch (e) {}
-    layout();
-    syncPlay();
-    requestAnimationFrame(frame);
+    try { octx.font = `500 100px ${FONT}`; const w = octx.measureText("M").width / 100; if (w > 0.3 && w < 1) charRatio = w; } catch (e) {}
+    layout(); syncPlay(); requestAnimationFrame(frame);
   }
-  new ResizeObserver(() => layout()).observe($("screen"));
-  const fontReady = document.fonts && document.fonts.load ? document.fonts.load(`600 16px "JetBrains Mono"`) : Promise.resolve();
+  new ResizeObserver(() => layout()).observe(out);
+  const fontReady = document.fonts && document.fonts.load ? document.fonts.load(`500 16px "JetBrains Mono"`) : Promise.resolve();
   Promise.race([fontReady, new Promise((r) => setTimeout(r, 1200))]).catch(() => {}).then(start);
 })();
 </script>
