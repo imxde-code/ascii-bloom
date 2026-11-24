@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ASCII Bloom</title>
+<title>ASCII Tulip</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
@@ -33,23 +33,42 @@ body {
 }
 .frame {
   container-type: inline-size;
-  aspect-ratio: 9 / 16; height: min(88vh, 940px); max-width: 100%;
-  background: var(--flank); border-radius: 12px; overflow: hidden;
-  display: grid; grid-template-rows: 56.6% 1fr;
+  aspect-ratio: 16 / 9; width: min(100%, calc(86vh * 16 / 9), 1400px);
+  background: var(--flank); border-radius: 12px; overflow: hidden; position: relative;
   box-shadow: 0 0 0 1px #1a1e2a, 0 40px 90px -40px rgba(0,0,0,.9);
 }
-.art { display: flex; justify-content: center; background: var(--flank); min-height: 0; }
-.art canvas { height: 100%; aspect-ratio: 330 / 580; max-width: 100%; background: var(--screen); display: block; }
-
-.editor { background: var(--editor); display: flex; flex-direction: column; min-height: 0; }
-.ed-bar {
-  display: flex; align-items: center; gap: 2.4cqw; padding: 1.7cqw 2.4cqw;
-  background: var(--editor-bar); color: var(--muted); font-size: 2.1cqw; white-space: nowrap; overflow: hidden;
+.art {
+  position: absolute; inset: 0; padding-right: 42cqw;
+  display: flex; justify-content: center; background: var(--flank);
+  transition: padding-right .55s cubic-bezier(.2,.7,.2,1);
 }
-.ed-bar i { width: 1.9cqw; height: 1.9cqw; border-radius: 50%; display: inline-block; margin-right: 1cqw; }
+.art canvas { height: 100%; width: 42.19cqw; max-width: 100%; background: var(--screen); display: block; transition: width .55s cubic-bezier(.2,.7,.2,1); }
+.frame.wide .art { padding-right: 0; }
+.frame.wide .art canvas { width: 100cqw; }
+
+.editor {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 42cqw;
+  background: var(--editor); display: flex; flex-direction: column; border-left: 1px solid #262a38;
+  transition: transform .55s cubic-bezier(.2,.7,.2,1);
+}
+.frame.wide .editor { transform: translateX(100%); }
+.tab {
+  position: absolute; left: -26px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 64px; padding: 0; border-radius: 8px 0 0 8px;
+  background: var(--editor-bar); border: 1px solid #2b3042; border-right: 0;
+  color: var(--muted); display: grid; place-items: center; cursor: pointer;
+}
+.tab:hover { color: #e6e9f2; }
+.tab svg { width: 12px; height: 12px; transition: transform .55s; }
+.frame.wide .tab svg { transform: rotate(180deg); }
+.ed-bar {
+  display: flex; align-items: center; gap: 1.2cqw; padding: 0.85cqw 1.2cqw;
+  background: var(--editor-bar); color: var(--muted); font-size: 1.05cqw; white-space: nowrap; overflow: hidden;
+}
+.ed-bar i { width: 0.95cqw; height: 0.95cqw; border-radius: 50%; display: inline-block; margin-right: 0.5cqw; }
 .ed-bar i:nth-child(1) { background: #ff5f57; } .ed-bar i:nth-child(2) { background: #febc2e; } .ed-bar i:nth-child(3) { background: #28c840; }
 .ed-bar b { color: #dfe3ee; font-weight: 500; }
-.code { position: relative; flex: 1; overflow: hidden; font-size: 2.05cqw; line-height: 1.62; }
+.code { position: relative; flex: 1; overflow: hidden; font-size: 0.92cqw; line-height: 1.62; font-variant-ligatures: none; }
 .hl { position: absolute; left: 0; right: 0; height: 1.62em; background: var(--line-hl); top: 38%; }
 .lines { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
 .ln { display: grid; grid-template-columns: 5.5ch 1fr; height: 1.62em; white-space: pre; }
@@ -72,17 +91,15 @@ button.primary { background: var(--accent); color: #1a0710; border-color: var(--
 .filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .note { color: #5d6478; font-size: 11.5px; margin: 0; text-align: center; }
 
-@media (max-width: 600px) {
-  .frame { height: auto; width: 100%; }
-}
-@media (prefers-reduced-motion: reduce) { .lines { will-change: auto; } }
+@media (prefers-reduced-motion: reduce) { .lines { will-change: auto; } .art, .art canvas, .editor, .tab svg { transition: none; } }
 </style>
 </head>
 <body>
 
 <div class="frame">
-  <div class="art"><canvas id="out" role="img" aria-label="A bouquet of flowers growing and changing vases, rendered as colored ASCII characters"></canvas></div>
-  <div class="editor">
+  <div class="art"><canvas id="out" role="img" aria-label="A tulip growing from a pot and blooming, rendered as colored ASCII characters"></canvas></div>
+  <div class="editor" id="editor">
+    <button class="tab" id="tab" type="button" aria-controls="editor" aria-expanded="true" aria-label="Hide code panel"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <div class="ed-bar"><span><i></i><i></i><i></i></span><span><b>ascii_player.py</b> — Renderer.convert() + draw()</span></div>
     <div class="code"><div class="hl"></div><div class="lines" id="lines"></div></div>
   </div>
@@ -97,18 +114,19 @@ button.primary { background: var(--accent); color: #1a0710; border-color: var(--
     <button type="button" data-style="blocks" aria-pressed="false">Blocks</button>
   </div>
   <label class="filebtn">Your own video<input type="file" id="file" accept="video/*"></label>
-  <button type="button" id="back" hidden>Back to the bloom</button>
+  <button type="button" id="codeToggle" aria-controls="editor" aria-expanded="true">Hide code</button>
+  <button type="button" id="back" hidden>Back to the tulip</button>
 </div>
-<p class="note">Space to pause. A video you load stays in this tab.</p>
+<p class="note">Space to pause, C to show or hide the code. A video you load stays in this tab.</p>
 
 <script>
 (() => {
   // ================= renderer config =================
   const RAMP = " .'`^\",:;Il!i><~+_-?][}{1)(|tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
   const EDGE = ["-", "\\", "|", "/"];
-  const W = 330, H = 580, T = 19.2, END = 17.4;
+  let W = 360; const H = 480, T = 18.8, END = 17.0, BASE_COLS = 92;
   const FONT = '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace';
-  const state = { t: 0, playing: true, style: "edges", cols: 84, sat: 1.1, edges: 0.4, source: "bloom" };
+  const state = { t: 0, playing: true, style: "edges", cols: 92, sat: 1.1, edges: 0.4, source: "bloom" };
   try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) { state.t = 13; state.playing = false; } } catch (e) {}
 
   const $ = (id) => document.getElementById(id);
@@ -142,216 +160,181 @@ button.primary { background: var(--accent); color: #1a0710; border-color: var(--
     return keys[keys.length - 1][1];
   }
 
-  // ================= the bouquet =================
-  const PAL = {
-    red:     ["#3e0710", "#a81a2c", "#ee6a6e"].map(hex),
-    pink:    ["#4e1532", "#c24a7e", "#f4a8c8"].map(hex),
-    rose:    ["#4a0c22", "#b8305a", "#f08aa4"].map(hex),
-    white:   ["#4a4652", "#bdb8c4", "#f6f3f8"].map(hex),
-    magenta: ["#3e0d38", "#9e2886", "#e48ad0"].map(hex),
-    coral:   ["#4e1c0c", "#c8562e", "#f6a274"].map(hex),
-    blue:    ["#142050", "#4766b8", "#a6bcec"].map(hex),
-    sky:     ["#16304e", "#5a88c0", "#b8d4f0"].map(hex),
-    violet:  ["#24164e", "#6a52b6", "#bcaaf0"].map(hex),
-  };
-  const WARM = ["red", "pink", "rose", "white", "magenta", "white", "red", "pink"];
-  const COOL = ["blue", "sky", "violet", "blue", "white"];
+  // ================= the tulip =================
+  const easeIO = (x) => { x = clamp01(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const POT = { top: 392, rimH: 15, bottom: 470, wTop: 58, wBot: 42, rimW: 66 };
+  const LEAF = ["#0f3418", "#3c8a4c", "#a2d49a"].map(hex);
+  const GREEN_P = ["#1a4420", "#4c9446", "#b4dc98"].map(hex);
+  const RED_P = ["#560612", "#c4182c", "#ff7262"].map(hex);
+  const YELLOW = hex("#f2c12e");
+  // head height over time (the stem rises out of the pot)
+  const HY = [[0, 394], [3.2, 394], [5.0, 344], [7.4, 262], [9.8, 206], [12.4, 192]];
 
-  const rng = mulberry32(20261124);
-  const SLOTS = [];
-  for (let k = 0; k < 64; k++) {
-    const a = -Math.PI * (-0.22 + 1.44 * rng());
-    const d = Math.sqrt(rng());
-    SLOTS.push({
-      x: Math.cos(a) * d, y: Math.sin(a) * d * (Math.sin(a) > 0 ? 1.1 : 0.82) + 0.12, d,
-      size: 0.72 + rng() * 0.55, seed: rng() * 6.283,
-      warm: WARM[(rng() * WARM.length) | 0],
-      late: rng() < 0.6 ? COOL[(rng() * COOL.length) | 0] : WARM[(rng() * WARM.length) | 0],
-      swap: 8.4 + rng() * 4.5,
-    });
-  }
-  SLOTS.sort((p, q) => p.d - q.d);
-  const LEAVES = [];
-  for (let k = 0; k < 26; k++) {
-    LEAVES.push({ a: -Math.PI * (-0.18 + 1.36 * rng()), len: 0.35 + rng() * 0.4, w: 0.07 + rng() * 0.05, bend: (rng() - 0.5) * 0.8, at: 45 + rng() * 110 });
-  }
-
-  // bouquet center / radius over time
-  const CY = [[0, 432], [2.4, 420], [3.6, 392], [5.6, 360], [7.6, 330], [9.2, 302], [11.2, 272], [13.6, 246], [15.8, 222], [17.4, 214]];
-  const RR = [[0, 0], [2.2, 0], [3.6, 70], [5.6, 86], [7.6, 106], [9.2, 128], [11.2, 145], [13.6, 160], [15.8, 172], [17.4, 178]];
-  const VB = [[0, 640], [6.0, 640], [7.6, 496], [17.4, 500]];
-
-  // vase profiles: half-widths at 9 heights (top -> bottom)
-  const VASES = [
-    { h: 210, w: [48, 34, 20, 11, 6, 4, 3, 3, 3], c: ["#2e1430", "#a8487a", "#e8a8c8"], st: [255, 255, 255, 0], hd: 0 },
-    { h: 86,  w: [22, 27, 36, 41, 40, 34, 26, 19, 22], c: ["#3e0a1a", "#bc3a5a", "#f49ab0"], st: [255, 214, 170, 0.28], hd: 1 },
-    { h: 96,  w: [26, 30, 38, 43, 42, 37, 29, 22, 25], c: ["#1a0e40", "#6446b8", "#b6a2ee"], st: [255, 196, 226, 0.26], hd: 1 },
-    { h: 112, w: [32, 28, 33, 42, 47, 46, 40, 33, 36], c: ["#242448", "#9696cc", "#ebe6f6"], st: [56, 76, 168, 0.5], hd: 0.35 },
-    { h: 134, w: [40, 31, 34, 43, 49, 48, 42, 35, 39], c: ["#262c3c", "#8892ac", "#e0e4ee"], st: [40, 58, 110, 0.42], hd: 0 },
-  ].map((v) => ({ ...v, c: v.c.map(hex) }));
-  const VK = [[0, 0], [6.0, 0], [7.4, 1], [9.0, 2], [11.0, 3], [13.6, 4]];
-
-  function vaseAt(t) {
-    let i = 1; while (i < VK.length - 1 && t > VK[i][0]) i++;
-    const [t0, a] = VK[i - 1], [t1, b] = VK[i];
-    const u = t <= t0 ? 0 : smooth((t - t0) / (t1 - t0));
-    const A = VASES[a], B = VASES[b];
-    return {
-      h: lerp(A.h, B.h, u), w: A.w.map((x, k) => lerp(x, B.w[k], u)),
-      c: A.c.map((x, k) => mix(x, B.c[k], u)),
-      st: [lerp(A.st[0], B.st[0], u), lerp(A.st[1], B.st[1], u), lerp(A.st[2], B.st[2], u), lerp(A.st[3], B.st[3], u)],
-      hd: lerp(A.hd, B.hd, u),
-    };
-  }
-
-  function drawVase(cx, top, sc, v, alpha) {
-    if (alpha <= 0.01) return;
-    const N = 48, h = v.h;
-    const wAt = (u) => { const f = u * 8, i = Math.min(7, Math.floor(f)), r = f - i, s = (1 - Math.cos(r * Math.PI)) / 2; return lerp(v.w[i], v.w[i + 1], s) * sc; };
-    ctx.save(); ctx.globalAlpha = alpha;
-    // handles
-    if (v.hd > 0.02) {
-      ctx.strokeStyle = css([200, 150, 46], v.hd); ctx.lineWidth = 3.2 * sc; ctx.lineCap = "round";
-      const w0 = wAt(0.12), w1 = wAt(0.45);
-      for (const s of [-1, 1]) {
-        ctx.beginPath(); ctx.moveTo(cx + s * w0, top + h * 0.12);
-        ctx.bezierCurveTo(cx + s * (w1 + 16 * sc), top + h * 0.05, cx + s * (w1 + 18 * sc), top + h * 0.4, cx + s * (w1 - 2), top + h * 0.48);
-        ctx.stroke();
-      }
-    }
-    const path = () => {
-      ctx.beginPath();
-      for (let i = 0; i <= N; i++) { const u = i / N; ctx.lineTo(cx - wAt(u), top + u * h); }
-      for (let i = N; i >= 0; i--) { const u = i / N; ctx.lineTo(cx + wAt(u), top + u * h); }
-      ctx.closePath();
-    };
-    path();
-    const maxw = Math.max(...v.w) * sc;
-    const g = ctx.createLinearGradient(cx - maxw, 0, cx + maxw, 0);
-    g.addColorStop(0, css(v.c[0])); g.addColorStop(0.32, css(v.c[1])); g.addColorStop(0.44, css(v.c[2]));
-    g.addColorStop(0.6, css(v.c[1])); g.addColorStop(1, css(v.c[0]));
-    ctx.fillStyle = g; ctx.fill();
-    if (v.st[3] > 0.01) {
-      ctx.save(); path(); ctx.clip();
-      ctx.fillStyle = css(v.st, v.st[3]);
-      for (let y = top + 6 * sc; y < top + h; y += 7.5 * sc) ctx.fillRect(cx - maxw - 2, y, maxw * 2 + 4, 2.6 * sc);
-      ctx.restore();
-    }
-    // rim
-    ctx.beginPath(); ctx.ellipse(cx, top, wAt(0), 3.5 * sc, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#080810"; ctx.fill(); ctx.strokeStyle = css(mix(v.c[2], [214, 170, 80], v.hd * 0.8), 0.9); ctx.lineWidth = 2; ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawLeaf(x, y, ang, len, w, bend, col) {
-    if (len < 1) return;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
-    ctx.beginPath(); ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(len * 0.45, -w + bend * len * 0.3, len, bend * len * 0.25);
-    ctx.quadraticCurveTo(len * 0.45, w + bend * len * 0.3, 0, 0);
-    const g = ctx.createLinearGradient(0, -w, 0, w);
-    g.addColorStop(0, css(col[2])); g.addColorStop(0.5, css(col[1])); g.addColorStop(1, css(col[0]));
-    ctx.fillStyle = g; ctx.fill();
-    ctx.restore();
-  }
-  const GREEN = ["#0c2a12", "#2c6e34", "#78b86e"].map(hex);
-
-  function drawFlower(x, y, s, col, seed, open, centerCol) {
-    if (s < 0.8) return;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(seed * 0.2);
-    const layers = [[8, 1.0, 0.5], [6, 0.74, 0.32], [5, 0.48, 0.18]];
-    for (const [n, rad, off] of layers) {
-      const rk = s * rad * (0.55 + 0.45 * open);
-      const g = ctx.createRadialGradient(0, 0, rk * 0.06, 0, 0, rk * 1.15);
-      g.addColorStop(0, css(col[0])); g.addColorStop(0.5, css(col[1])); g.addColorStop(1, css(col[2]));
-      ctx.fillStyle = g;
-      for (let i = 0; i < n; i++) {
-        const a = seed + i * (Math.PI * 2 / n) + rad;
-        ctx.beginPath();
-        ctx.ellipse(Math.cos(a) * rk * off, Math.sin(a) * rk * off * 0.9, rk * 0.55, rk * 0.4, a, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.beginPath(); ctx.arc(0, 0, s * 0.14, 0, Math.PI * 2);
-    ctx.fillStyle = centerCol ? css(centerCol) : css(col[0]); ctx.fill();
-    ctx.restore();
-  }
-
-  function drawStream(cx, bottom, a, time) {
+  function drawPot(a) {
     if (a <= 0.01) return;
+    const { top, rimH, bottom, wTop, wBot, rimW } = POT, cx = W / 2;
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1 - a) * 20);
+    const sh = ctx.createRadialGradient(cx, bottom + 4, 4, cx, bottom + 4, 120);
+    sh.addColorStop(0, "rgba(160,120,110,.32)"); sh.addColorStop(1, "rgba(160,120,110,0)");
+    ctx.fillStyle = sh; ctx.beginPath(); ctx.ellipse(cx, bottom + 4, 120, 10, 0, 0, Math.PI * 2); ctx.fill();
+    const body = () => { ctx.beginPath(); ctx.moveTo(cx - wTop, top + rimH); ctx.lineTo(cx + wTop, top + rimH); ctx.lineTo(cx + wBot, bottom); ctx.lineTo(cx - wBot, bottom); ctx.closePath(); };
+    const terracotta = (x0, x1) => {
+      const g = ctx.createLinearGradient(x0, 0, x1, 0);
+      g.addColorStop(0, "#300f06"); g.addColorStop(0.3, "#a44c2a"); g.addColorStop(0.43, "#f2a676");
+      g.addColorStop(0.57, "#b65a32"); g.addColorStop(1, "#280c05");
+      return g;
+    };
+    body(); ctx.fillStyle = terracotta(cx - wTop, cx + wTop); ctx.fill();
+    ctx.save(); body(); ctx.clip();
+    ctx.fillStyle = "rgba(255,206,170,.16)";
+    for (let y = top + rimH + 6; y < bottom; y += 9) ctx.fillRect(cx - wTop, y, wTop * 2, 3);
+    ctx.restore();
+    ctx.fillStyle = terracotta(cx - rimW, cx + rimW); ctx.fillRect(cx - rimW, top, rimW * 2, rimH);
+    ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(cx - wTop, top + rimH, wTop * 2, 3);
+    ctx.beginPath(); ctx.ellipse(cx, top + 1, rimW - 5, 5, 0, 0, Math.PI * 2); ctx.fillStyle = "#1e0f08"; ctx.fill();
+    ctx.restore();
+  }
+
+  function drawStream(bottom, a, time) {
+    if (a <= 0.01) return;
+    const cx = W / 2, fr = Math.floor(time * 24);
     ctx.save(); ctx.globalAlpha = a;
     ctx.fillStyle = "rgba(120,140,200,0.10)"; ctx.fillRect(cx - 5, 0, 10, bottom);
-    const fr = Math.floor(time * 24);
     for (let y = 0; y < bottom; y += 2) {
       const n = hash(y * 0.37, fr), n2 = hash(fr * 0.13, y * 0.71);
       ctx.fillStyle = `rgba(160,178,224,${0.25 + 0.6 * n})`;
       ctx.fillRect(cx - 1.2 + (n2 - 0.5) * 1.6, y, 2.4, 2);
     }
+    for (let k = 0; k < 7; k++) {
+      const n = hash(k, fr), m = hash(fr, k * 3.1);
+      ctx.fillStyle = `rgba(170,190,235,${0.5 * n})`;
+      ctx.fillRect(cx + (n - 0.5) * 34, bottom - 2 - m * 9, 2, 2);
+    }
     ctx.restore();
   }
 
-  function drawScene(t, time) {
-    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
-    const cx = W / 2 + Math.sin(time * 0.5) * 1.2;
-    const cy = track(CY, t), r = track(RR, t);
-    const sway = Math.sin(time * 0.8) * 1.5;
-
-    // falling stream from the top
-    drawStream(W / 2, cy - Math.max(30, r * 0.8), 1 - smooth((t - 7.0) / 1.6), time);
-
-    // vase (behind bouquet's lower edge)
-    const vtop = cy + Math.max(16, r * 0.42);
-    const sc = 0.55 + r / 220;
-    const vz = vaseAt(t); vz.h = Math.max(30, track(VB, t) - vtop);
-    drawVase(cx, vtop, sc, vz, smooth((t - 2.6) / 1.0));
-
-    // leaves around the bouquet
-    if (r > 40) {
-      LEAVES.forEach((L) => {
-        const g = smooth((r - L.at * 0.5) / 30);
-        if (g <= 0) return;
-        const droop = smooth((t - 13) / 3) * (Math.abs(Math.cos(L.a)) > 0.6 ? 0.6 : 0.2) * Math.sign(Math.cos(L.a));
-        const ang = L.a + droop;
-        drawLeaf(cx + Math.cos(L.a) * r * 0.35 + sway, cy + Math.sin(L.a) * r * 0.3, ang, r * L.len * g, r * L.w * g, L.bend, GREEN);
-      });
+  // a tulip leaf: a long blade from the base toward a tip, bowed sideways
+  function drawBlade(bx, by, tx, ty, bend, wmax) {
+    if (wmax < 0.5) return;
+    const dx = tx - bx, dy = ty - by, len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+    const cxp = bx + dx * 0.5 + nx * bend, cyp = by + dy * 0.5 + ny * bend;
+    const P = (u) => [(1 - u) * (1 - u) * bx + 2 * (1 - u) * u * cxp + u * u * tx, (1 - u) * (1 - u) * by + 2 * (1 - u) * u * cyp + u * u * ty];
+    const Wd = (u) => wmax * Math.pow(Math.sin(Math.PI * Math.min(1, u * 1.05)), 0.75) * (1 - 0.35 * u) + 0.6;
+    const N = 30, left = [], right = [];
+    for (let i = 0; i <= N; i++) {
+      const u = i / N, [x, y] = P(u), [x2, y2] = P(Math.min(1, u + 0.01)), [x1, y1] = P(Math.max(0, u - 0.01));
+      const tl = Math.hypot(x2 - x1, y2 - y1) || 1, px = -(y2 - y1) / tl, py = (x2 - x1) / tl, w = Wd(u);
+      left.push([x + px * w, y + py * w]); right.push([x - px * w, y - py * w]);
     }
+    ctx.beginPath(); ctx.moveTo(left[0][0], left[0][1]);
+    left.forEach(([x, y]) => ctx.lineTo(x, y));
+    for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i][0], right[i][1]);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(bx + nx * wmax, by + ny * wmax, bx - nx * wmax, by - ny * wmax);
+    g.addColorStop(0, css(LEAF[2])); g.addColorStop(0.45, css(LEAF[1])); g.addColorStop(1, css(LEAF[0]));
+    ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); for (let i = 0; i <= N; i++) { const [x, y] = P(i / N * 0.95); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.strokeStyle = css(LEAF[0], 0.8); ctx.lineWidth = 1.2; ctx.stroke();
+  }
 
-    // dark mass between blooms
-    if (r > 4) {
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, "rgba(40,10,24,0.95)"); g.addColorStop(1, "rgba(20,6,14,0)");
-      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.95, r * 0.7, 0, 0, Math.PI * 2); ctx.fill();
-    }
+  function petalPath(L, w) {
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(w * 1.05, -L * 0.12, w * 0.85, -L * 0.86, 0, -L);
+    ctx.bezierCurveTo(-w * 0.85, -L * 0.86, -w * 1.05, -L * 0.12, 0, 0);
+  }
 
-    // blooms: more appear as the bouquet widens
-    const c = 1 + Math.pow(r / 178, 1.15) * (SLOTS.length - 1);
-    const list = [];
-    for (let k = 0; k < SLOTS.length; k++) {
-      const a = clamp01(c - k); if (a <= 0) break;
-      list.push([SLOTS[k], a]);
+  function drawPetal(L, w, col, base, dark, time, seed) {
+    petalPath(L, w);
+    const g = ctx.createLinearGradient(0, 0, 0, -L);
+    const d = (c) => mix(c, [0, 0, 0], dark);
+    g.addColorStop(0, css(d(base))); g.addColorStop(0.22, css(d(col[0]))); g.addColorStop(0.5, css(d(col[1])));
+    g.addColorStop(0.86, css(d(col[2]))); g.addColorStop(1, css(d(col[1])));
+    ctx.fillStyle = g; ctx.fill();
+    ctx.save(); petalPath(L, w); ctx.clip();
+    ctx.strokeStyle = css(d(col[2]), 0.28); ctx.lineWidth = 1;
+    for (let k = -2; k <= 2; k++) {
+      ctx.beginPath(); ctx.moveTo(k * w * 0.08, -L * 0.08);
+      ctx.quadraticCurveTo(k * w * 0.42, -L * 0.5, k * w * 0.22, -L * 0.96); ctx.stroke();
     }
-    list.sort((p, q) => p[0].y - q[0].y);
-    const fs = 6 + r * 0.17;
-    for (const [S, a] of list) {
-      const u = smooth((t - S.swap) / 2.2);
-      const col = [0, 1, 2].map((i) => mix(PAL[S.warm][i], PAL[S.late][i], u));
-      const wob = Math.sin(time * 0.9 + S.seed) * 1.2;
-      drawFlower(cx + S.x * r + sway + wob, cy + S.y * r * 0.9, fs * S.size * ease(a), col, S.seed, 0.6 + 0.4 * a, null);
-    }
+    ctx.restore();
+    petalPath(L, w); ctx.strokeStyle = css(d(col[0]), 0.7); ctx.lineWidth = 1.1; ctx.stroke();
+  }
 
-    // phase one: a single flower on a long stem, which the bouquet grows out of
-    const solo = 1 - smooth((t - 2.6) / 1.3);
-    if (solo > 0.01) {
-      ctx.save(); ctx.globalAlpha = solo;
-      const sy = cy - 6, s = 22 + 44 * ease(t / 2.2);
-      ctx.strokeStyle = css(GREEN[1]); ctx.lineWidth = 3; ctx.beginPath();
-      ctx.moveTo(cx, sy); ctx.quadraticCurveTo(cx + 3, sy + 80, cx - 1, H); ctx.stroke();
-      drawLeaf(cx, sy + 26, Math.PI * 0.78, s * 1.0, s * 0.28, 0.2, GREEN);
-      drawLeaf(cx, sy + 22, Math.PI * 0.2, s * 1.1, s * 0.3, -0.2, GREEN);
-      drawLeaf(cx, sy + 60, Math.PI * 0.85, s * 0.8, s * 0.22, 0.2, GREEN);
-      drawFlower(cx + sway, sy, s, PAL.rose, 0.8, 0.5 + 0.5 * ease(t / 2.4), [236, 170, 60]);
+  // the flower head: three back petals, the heart, three front petals
+  function drawTulip(hx, hy, s, cmix, o, time) {
+    if (s <= 0.02) return;
+    const L = 104 * s, w = 42 * s;
+    const col = [0, 1, 2].map((i) => mix(GREEN_P[i], RED_P[i], cmix));
+    const base = mix(GREEN_P[0], YELLOW, cmix);
+    const petals = [
+      { side: -0.55, back: true }, { side: 0.55, back: true }, { side: 0, back: true },
+      { side: -1, back: false }, { side: 1, back: false }, { side: 0, back: false },
+    ];
+    const one = (p, i) => {
+      const flutter = Math.sin(time * 1.3 + i * 1.7) * 0.025 * o;
+      const ang = p.side * (0.1 + 0.95 * o) + flutter;
+      ctx.save();
+      ctx.translate(hx + p.side * w * 0.32 * (1 - o), hy);
+      ctx.rotate(ang);
+      if (!p.back && p.side === 0) ctx.scale(1.08, 1 - 0.42 * o);
+      drawPetal(L * (p.back ? 0.97 : 1), w * (p.back ? 0.92 : 1), col, base, p.back ? 0.32 : 0, time, i);
+      ctx.restore();
+    };
+    petals.slice(0, 3).forEach(one);
+    if (o > 0.15) {
+      const a = smooth((o - 0.15) / 0.5);
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(hx, hy - L * 0.22);
+      ctx.beginPath(); ctx.ellipse(0, 0, w * 0.55, w * 0.32, 0, 0, Math.PI * 2); ctx.fillStyle = "#1a0c0a"; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -L * 0.22); ctx.strokeStyle = "#cfe39a"; ctx.lineWidth = 4 * s; ctx.stroke();
+      for (let k = 0; k < 6; k++) {
+        const ax = (k - 2.5) * w * 0.17, ay = -L * (0.12 + 0.06 * Math.abs(k - 2.5) / 2.5);
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(ax, ay); ctx.strokeStyle = "#2a1a12"; ctx.lineWidth = 1.4 * s; ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(ax, ay, 2.2 * s, 4.2 * s, 0, 0, Math.PI * 2); ctx.fillStyle = "#3a2414"; ctx.fill();
+      }
       ctx.restore();
     }
+    petals.slice(3).forEach((p, i) => one(p, i + 3));
+  }
+
+  function drawScene(t, time) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+    // slow push-in toward the open flower at the end
+    const k = easeIO((t - 11.5) / 5);
+    const z = 1 + 0.38 * k, fy = lerp(H / 2, 168, k);
+    ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -fy);
+
+    const cx = W / 2, top = POT.top;
+    drawStream(top, 1 - smooth((t - 2.6) / 1.0), time);
+
+    const hy = track(HY, t);
+    const grow = clamp01((top - hy) / (top - 192));
+    const sway = Math.sin(time * 0.7) * 2.2 * grow;
+    const hx = cx + 4 * Math.sin(grow * 2.4) + sway;
+
+    // leaves first, so the stem and flower sit in front of them
+    const g1 = ease((t - 3.4) / 4.2), g2 = ease((t - 3.9) / 4.2), g3 = ease((t - 5.2) / 3.4);
+    drawBlade(cx - 3, top + 2, cx - 6 - 100 * g1, top - 10 - 168 * g1, 34 * g1, 17 * g1);
+    drawBlade(cx + 3, top + 2, cx + 8 + 92 * g2, top - 10 - 140 * g2, -30 * g2, 16 * g2);
+
+    // stem
+    if (hy < top - 1) {
+      ctx.beginPath(); ctx.moveTo(cx, top + 2);
+      ctx.quadraticCurveTo(cx + 8, (top + hy) / 2, hx, hy + 2);
+      ctx.strokeStyle = "#2f7a3a"; ctx.lineWidth = 6.5; ctx.lineCap = "round"; ctx.stroke();
+      ctx.strokeStyle = "rgba(170,230,150,.35)"; ctx.lineWidth = 2; ctx.stroke();
+    }
+    drawBlade(cx + 2, top + 2, cx + 30 * g3 - 6, top - 10 - 92 * g3, -16 * g3, 11 * g3);
+
+    // bud swells, turns from green to red, then opens
+    const bud = ease((t - 6.2) / 2.4);
+    const cmix = smooth((t - 7.8) / 2.6);
+    const o = easeIO((t - 10.2) / 4.4);
+    drawTulip(hx, hy + 4, 0.35 * smooth((t - 3.3) / 2.6) + 0.65 * bud, cmix, o, time);
+
+    drawPot(ease(t / 1.0));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   // ================= ASCII conversion =================
@@ -361,6 +344,10 @@ button.primary { background: var(--accent); color: #1a0710; border-color: var(--
     const rect = out.getBoundingClientRect();
     out.width = Math.max(1, Math.round(rect.width * dpr));
     out.height = Math.max(1, Math.round(rect.height * dpr));
+    // keep the scene's height fixed and widen it to match the screen, so characters stay the same size
+    W = Math.max(360, Math.round(H * (rect.width / Math.max(1, rect.height))));
+    if (scene.width !== W) scene.width = W;
+    state.cols = Math.round(BASE_COLS * W / 360);
     const cellW = out.width / state.cols;
     const fontPx = cellW / charRatio;
     const rows = Math.max(8, Math.floor(out.height / (fontPx * 1.12)));
@@ -576,8 +563,24 @@ button.primary { background: var(--accent); color: #1a0710; border-color: var(--
     if (state.source === "video") video.currentTime = 0; else state.t = 0;
     if (!state.playing) togglePlay();
   });
+  // code panel: slides off to the right, and the screen widens to the full frame
+  const frameEl = document.querySelector(".frame"), tabEl = $("tab"), codeBtn = $("codeToggle");
+  let codeShown = true;
+  function setCode(show, save = true) {
+    codeShown = show;
+    frameEl.classList.toggle("wide", !show);
+    codeBtn.textContent = show ? "Hide code" : "Show code";
+    codeBtn.setAttribute("aria-expanded", String(show));
+    tabEl.setAttribute("aria-expanded", String(show));
+    tabEl.setAttribute("aria-label", show ? "Hide code panel" : "Show code panel");
+    if (save) { try { localStorage.setItem("tulip-code", show ? "1" : "0"); } catch (e) {} }
+  }
+  tabEl.addEventListener("click", () => setCode(!codeShown));
+  codeBtn.addEventListener("click", () => setCode(!codeShown));
+  try { if (localStorage.getItem("tulip-code") === "0") setCode(false, false); } catch (e) {}
   document.addEventListener("keydown", (e) => {
     if (e.code === "Space" && !/INPUT|BUTTON|SELECT|TEXTAREA/.test(e.target.tagName)) { e.preventDefault(); togglePlay(); }
+    if (e.code === "KeyC" && !e.metaKey && !e.ctrlKey && !/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) setCode(!codeShown);
   });
   document.querySelectorAll("[data-style]").forEach((b) => b.addEventListener("click", () => {
     state.style = b.dataset.style;
